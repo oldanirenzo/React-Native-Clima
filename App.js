@@ -1,113 +1,93 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
-  ScrollView,
   View,
-  Text,
-  StatusBar,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Alert,
 } from 'react-native';
+import Formulario from './components/Formulario';
+import Clima from './components/Clima';
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const App = () => {
+  const [busqueda, setBusqueda] = useState({
+    ciudad: '',
+    pais: '',
+  });
+  const [consultar, setConsultar] = useState(false);
+  const [resultado, setResultado] = useState({});
+  const [bgcolor, setBgcolor] = useState('rgb(71,149,212)');
+  const {ciudad, pais} = busqueda;
 
-const App: () => React$Node = () => {
+  const mostrarAlerta = () => {
+    Alert.alert('Error', 'No hay resultados, intenta con otra ciudad o pais', [
+      {text: 'Entendido'},
+    ]);
+  };
+
+  useEffect(() => {
+    const consultarClima = async () => {
+      if (consultar) {
+        const apiID = 'eb953af4f601f89e28a669bfcab3a9ca';
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${ciudad},${pais}&appid=${apiID}`; //Recordar poner https:// al principio del url
+
+        try {
+          const respuesta = await fetch(url);
+          const resultado = await respuesta.json();
+          setResultado(resultado);
+          setConsultar(false);
+          //Modifica los colores de fonde de acuerdo a la temperatura
+
+          const kelvin = 273.15;
+          const {main} = resultado;
+          const actual = main.temp - kelvin;
+
+          if (actual < 10) {
+            setBgcolor('rgb(105,108,149)');
+          } else if (actual>= 10 && actual < 25) {
+            setBgcolor('rgb(71,149,212)');
+          } else {
+            setBgcolor('rgb(178,28,61)');
+          }
+        } catch (error) {
+          mostrarAlerta();
+        }
+      }
+    };
+    consultarClima();
+  }, [consultar]);
+
+  const ocultarTeclado = () => {
+    Keyboard.dismiss();
+  };
+  const bgcolorApp = {
+    backgroundColor: bgcolor,
+  };
   return (
     <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
+      <TouchableWithoutFeedback onPress={() => ocultarTeclado()}>
+        <View style={[styles.app, bgcolorApp]}>
+          <View style={styles.contenido}>
+            <Clima resultado={resultado} />
+            <Formulario
+              busqueda={busqueda}
+              setBusqueda={setBusqueda}
+              setConsultar={setConsultar}
+            />
           </View>
-        </ScrollView>
-      </SafeAreaView>
+        </View>
+      </TouchableWithoutFeedback>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
+  app: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  engine: {
-    position: 'absolute',
-    right: 0,
-  },
-  body: {
-    backgroundColor: Colors.white,
-  },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
+  contenido: {
+    marginHorizontal: '2.5%',
   },
 });
 
